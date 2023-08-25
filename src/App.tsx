@@ -1,56 +1,68 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { ToastContainer, ToastOptions, toast } from "react-toastify";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
+import { useEffect } from "react";
+import { clearToasts, setUserStatus } from "./app/slices/AppSlice";
+import { onAuthStateChanged } from "firebase/auth";
+import { firebaseAuth } from "./utils/FirebaseConfig";
+import About from "./pages/About";
+import Background from "./components/Background";
+import Compare from "./pages/Compare";
+import Footer from "./sections/Footer";
+import MyList from "./pages/MyList";
+import NavBar from "./sections/NavBar";
+import Pokemon from "./pages/Pokemon";
+import Search from "./pages/Search";
+
+import "./scss/index.scss";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
+  const { toasts } = useAppSelector(({ app }) => app);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    onAuthStateChanged(firebaseAuth, (currenUser) => {
+      if (currenUser) {
+        dispatch(setUserStatus({ email: currenUser.email }));
+      }
+    });
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (toasts.length) {
+      const toastOptions: ToastOptions = {
+        position: "bottom-right",
+        autoClose: 2000,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "dark",
+      };
+      toasts.forEach((message: string) => {
+        toast(message, toastOptions);
+      });
+      dispatch(clearToasts());
+    }
+  }, [toasts, dispatch]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
+    <div className="main-container">
+      <Background />
+      <BrowserRouter>
+        <div className="app">
+          <NavBar />
+          <Routes>
+            <Route element={<About />} path="/about" />
+            <Route element={<Compare />} path="/compare" />
+            <Route element={<MyList />} path="/list" />
+            <Route element={<Pokemon />} path="/pokemon/:id" />
+            <Route element={<Search />} path="/search" />
+            <Route element={<Navigate to="/pokemon/1" />} path="*" />
+          </Routes>
+          <Footer />
+          <ToastContainer />
+        </div>
+      </BrowserRouter>
     </div>
   );
 }
